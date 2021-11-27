@@ -148,18 +148,70 @@ bayes_R2(fit2.2, summary = F) %>%
   theme(panel.grid = element_blank())
 ## exite uma massiva incerteza 
 
-# sumarizando
+# sumarizando de forma completa
 bayes_R2(fit2.2, summary = F) %>% 
   data.frame() %>% 
   summarise(mean   = mean(R2),
             median = median(R2),
-            mode   = tidybayes::Mode(R2))
+            mode   = tidybayes::Mode(R2),
+            Q2.5   = quantile(R2, .025),
+            q97.5  = quantile(R2, .975))
 
 # By default, bayes_R2() returns the mean. You can get the median with the 
 # robust = TRUE argument. To pull the mode, you’ll need to use summary = F
 # and feed the results into a mode function, like tidybayes::Mode()
 
+bayes_R2(fit2.2, robust = T) 
+bayes_R2(fit2.2)
 
 
+
+# serializacao dos modelos para rodar em paralelo
+fits <- 
+  by_id %>%
+  mutate(model = map(data, ~update(fit2.1, newdata = ., seed = 2)))
+
+fits
+
+# pegando as informacaoes de todos
+mean_structure <-
+  fits %>% 
+  mutate(coefs = map(model, ~ posterior_summary(.)[1:2, 1:2] %>% 
+                       data.frame() %>% 
+                       rownames_to_column("coefficients"))) %>% 
+  unnest(coefs) %>% 
+  select(-data, -model) %>% 
+  unite(temp, Estimate, Est.Error) %>% 
+  pivot_wider(names_from = coefficients,
+              values_from = temp) %>% 
+  separate(b_Intercept, into = c("init_stat_est", "init_stat_sd"), sep = "_") %>% 
+  separate(b_time, into = c("rate_change_est", "rate_change_sd"), sep = "_") %>% 
+  mutate_if(is.character, ~ as.double(.) %>% round(digits = 2)) %>% 
+  ungroup()
+
+head(mean_structure)
+
+
+# extraindo a variancia resdual de todos
+residual_variance <-
+  fits %>% 
+  mutate(residual_variance = map_dbl(model, ~ posterior_summary(.)[3, 1])^2) %>% 
+  mutate_if(is.double, round, digits = 2) %>% 
+  select(id, residual_variance)
+
+head(residual_variance)
+
+
+# extraindo o R2_Bayesian de todos
+r2 <-
+  fits %>% 
+  mutate(r2 = map_dbl(model, ~ bayes_R2(., robust = T)[1])) %>% 
+  mutate_if(is.double, round, digits = 2) %>% 
+  select(id, r2)
+
+head(r2)
+
+
+# combine informations
 
 
