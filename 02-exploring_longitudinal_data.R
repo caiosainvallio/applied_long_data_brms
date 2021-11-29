@@ -213,5 +213,87 @@ head(r2)
 
 
 # combine informations
+table <-
+  fits %>% 
+  unnest(data) %>% 
+  group_by(id) %>% 
+  slice(1) %>% 
+  select(id, male, exposure) %>% 
+  left_join(mean_structure,    by = "id") %>% 
+  left_join(residual_variance, by = "id") %>% 
+  left_join(r2,                by = "id") %>% 
+  rename(residual_var = residual_variance) %>% 
+  select(id, init_stat_est:r2, everything()) %>% 
+  ungroup()
 
+table %>% 
+  flextable::flextable() # LINDOOOOO!!!
+
+
+
+# fitted initial status
+table %>% 
+  pull(init_stat_est) %>% 
+  stem(scale = 2)
+
+# fitted rate of change
+table %>% 
+  pull(rate_change_est) %>% 
+  stem(scale = 2)
+
+# residual variance
+table %>% 
+  pull(residual_var) %>% 
+  stem(scale = 2)
+
+# r2 statistic
+table %>% 
+  pull(r2) %>% 
+  stem(scale = 2)
+
+
+
+by_id %>% 
+  unnest(data) %>% 
+  
+  ggplot(aes(x = time, y = tolerance, group = id)) +
+  geom_point() +
+  geom_abline(data = mean_structure,
+              aes(intercept = init_stat_est,
+                  slope = rate_change_est, group = id),
+              color = "blue") +
+  scale_x_continuous(breaks = 0:4, labels = 0:4 + 11) +
+  coord_cartesian(ylim = c(0, 4)) +
+  theme(panel.grid = element_blank()) +
+  facet_wrap(~id)
+
+
+
+# explorando diferencas entre as pessoas -----------------------------------
+
+
+tolerance_pp %>%
+  ggplot(aes(x = age, y = tolerance)) +
+  stat_smooth(method = "loess", se = F, span = .9, size = 2) +
+  stat_smooth(aes(group = id),
+              method = "loess", se = F, span = .9, size = 1/4) +
+  coord_cartesian(ylim = c(0, 4)) +
+  theme(panel.grid = element_blank())
+
+
+tolerance_pp %>%
+  ggplot(aes(x = age, y = tolerance)) +
+  stat_smooth(method = "lm", se = F, span = .9, size = 2) +
+  stat_smooth(aes(group = id),
+              method = "lm", se = F, span = .9, size = 1/4) +
+  coord_cartesian(ylim = c(0, 4)) +
+  theme(panel.grid = element_blank())
+
+
+fit2.3 <-
+  update(fit2.1, 
+         newdata = tolerance_pp,
+         file = "fits/fit02.03")
+summary(fit2.3)
+fixef(fit2.3)
 
