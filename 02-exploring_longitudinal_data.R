@@ -297,3 +297,7 @@ fit2.3 <-
 summary(fit2.3)
 fixef(fit2.3)
 
+
+
+
+
