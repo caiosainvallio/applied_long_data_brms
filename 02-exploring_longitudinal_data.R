@@ -321,3 +321,61 @@ tol_fitted %>%
               color = "blue", size = 2) +
   coord_cartesian(ylim = c(0, 4)) +
   theme(panel.grid = element_blank()) 
+
+
+
+## questions about change ------------------------------------------------------
+
+mean_structure %>% 
+  pivot_longer(ends_with("est")) %>% 
+  group_by(name) %>% 
+  summarise(mean = mean(value),
+            sd   = sd(value)) %>% 
+  mutate_if(is.double, round, digits = 2)
+
+
+
+mean_structure %>% 
+  select(init_stat_est, rate_change_est) %>% 
+  cor() %>% 
+  round(digits = 2)
+
+
+
+fit2.4 <-
+  update(fit2.1, 
+         newdata = tolerance_pp,
+         tolerance ~ 1 + time + male + time:male,
+         file = "fits/fit02.04")
+
+print(fit2.4)
+
+
+tol_fitted_male <-
+  tibble(male = rep(0:1, each = 2),
+         age  = rep(c(11, 15), times = 2)) %>% 
+  mutate(time = age - 11) %>% 
+  mutate(tolerance = fixef(fit2.4)[1, 1] + 
+           fixef(fit2.4)[2, 1] * time + 
+           fixef(fit2.4)[3, 1] * male + 
+           fixef(fit2.4)[4, 1] * time * male)
+
+tol_fitted_male
+
+
+tol_fitted %>% 
+  # we need to add `male` values to `tol_fitted`
+  left_join(tolerance_pp %>% select(id, male),
+            by = "id") %>% 
+  
+  ggplot(aes(x = age, y = tolerance, color = factor(male))) +
+  geom_line(aes(group = id),
+            size = 1/4) +
+  geom_line(data = tol_fitted_male,
+            size = 2) +
+  scale_color_viridis_d(end = .75) +
+  coord_cartesian(ylim = c(0, 4)) +
+  theme(legend.position = "none",
+        panel.grid = element_blank()) +
+  facet_wrap(~male)
+
