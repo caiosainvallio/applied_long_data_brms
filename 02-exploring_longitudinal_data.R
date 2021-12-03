@@ -298,3 +298,26 @@ summary(fit2.3)
 fixef(fit2.3)
 
 
+
+tol_fitted <-
+  mean_structure %>% 
+  mutate(`11` = init_stat_est + rate_change_est * 0,
+         `15` = init_stat_est + rate_change_est * 4) %>% 
+  select(id, `11`, `15`) %>% 
+  pivot_longer(-id, 
+               names_to = "age", 
+               values_to = "tolerance") %>% 
+  mutate(age = as.integer(age))
+
+head(tol_fitted)
+
+
+
+tol_fitted %>% 
+  ggplot(aes(x = age, y = tolerance, group = id)) +
+  geom_line(color = "blue", size = 1/4) +
+  geom_abline(intercept = fixef(fit2.3)[1, 1] + fixef(fit2.3)[2, 1] * -11,
+              slope     = fixef(fit2.3)[2, 1],
+              color = "blue", size = 2) +
+  coord_cartesian(ylim = c(0, 4)) +
+  theme(panel.grid = element_blank()) 
