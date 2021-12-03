@@ -384,8 +384,24 @@ tolerance_pp <-
   tolerance_pp %>% 
   mutate(exposure_01 = if_else(exposure > median(exposure), 1, 0))
 
+fit2.5 <-
+  update(fit2.4, 
+         newdata = tolerance_pp,
+         tolerance ~ 1 + time + exposure_01 + time:exposure_01,
+         file = "fits/fit02.05")
+
+print(fit2.5)
 
 
+tol_fitted_exposure <-
+  crossing(exposure_01 = 0:1,
+           age         = c(11, 15)) %>% 
+  mutate(time = age - 11) %>% 
+  mutate(tolerance = fixef(fit2.5)[1, 1] + 
+           fixef(fit2.5)[2, 1] * time + 
+           fixef(fit2.5)[3, 1] * exposure_01 + 
+           fixef(fit2.5)[4, 1] * time * exposure_01,
+         exposure = if_else(exposure_01 == 1, "high exposure", "low exposure") %>% 
+           factor(., levels = c("low exposure", "high exposure")))
 
-
-
+tol_fitted_exposure
