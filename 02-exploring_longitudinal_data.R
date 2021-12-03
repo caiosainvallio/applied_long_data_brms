@@ -379,3 +379,13 @@ tol_fitted %>%
         panel.grid = element_blank()) +
   facet_wrap(~male)
 
+
+tolerance_pp <-
+  tolerance_pp %>% 
+  mutate(exposure_01 = if_else(exposure > median(exposure), 1, 0))
+
+
+
+
+
+
