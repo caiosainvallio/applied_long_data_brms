@@ -405,3 +405,79 @@ tol_fitted_exposure <-
            factor(., levels = c("low exposure", "high exposure")))
 
 tol_fitted_exposure
+
+
+
+tol_fitted %>% 
+  # we need to add `exposure_01` values to `tol_fitted`
+  left_join(tolerance_pp %>% select(id, exposure_01),
+            by = "id") %>% 
+  mutate(exposure = if_else(exposure_01 == 1, "high exposure", "low exposure") %>% 
+           factor(., levels = c("low exposure", "high exposure"))) %>% 
+  
+  ggplot(aes(x = age, y = tolerance, color = exposure)) +
+  geom_line(aes(group = id),
+            size = 1/4) +
+  geom_line(data = tol_fitted_exposure,
+            size = 2) +
+  scale_color_viridis_d(option = "A", end = .75) +
+  coord_cartesian(ylim = c(0, 4)) +
+  theme(legend.position = "none",
+        panel.grid = element_blank()) +
+  facet_wrap(~exposure)
+
+
+
+
+
+
+
+
+
+p1 <-
+  mean_structure %>% 
+  pivot_longer(ends_with("est")) %>% 
+  mutate(name = factor(name, labels = c("Fitted inital status", "Fitted rate of change"))) %>% 
+  # we need to add `male` values to `tol_fitted`
+  left_join(tolerance_pp %>% select(id, male),
+            by = "id") %>% 
+  
+  ggplot(aes(x = factor(male), y = value, color = name)) +
+  geom_point(alpha = 1/2) +
+  scale_color_viridis_d(option = "B", begin = .2, end = .7) +
+  labs(x = "male",
+       y = NULL) +
+  theme(legend.position = "none",
+        panel.grid = element_blank()) +
+  facet_wrap(~name, scale = "free_y", ncol = 1)
+
+p1
+
+
+
+p2 <-
+  mean_structure %>% 
+  pivot_longer(ends_with("est")) %>% 
+  mutate(name = factor(name, labels = c("Fitted inital status", "Fitted rate of change"))) %>% 
+  # we need to add `male` values to `tol_fitted`
+  left_join(tolerance_pp %>% select(id, exposure),
+            by = "id") %>% 
+  
+  ggplot(aes(x = exposure, y = value, color = name)) +
+  geom_point(alpha = 1/2) +
+  scale_color_viridis_d(option = "B", begin = .2, end = .7) +
+  scale_x_continuous(breaks = 0:2,
+                     limits = c(0, 2.4)) +
+  labs(y = NULL) +
+  theme(legend.position = "none",
+        panel.grid = element_blank()) +
+  facet_wrap(~name, scale = "free_y", ncol = 1)
+
+p2
+
+
+
+
+library(patchwork)
+
+p1 + p2 + scale_y_continuous(breaks = NULL)
